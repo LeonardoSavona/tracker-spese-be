@@ -55,7 +55,7 @@ def sync():
         sh = gc.open_by_key(SPREADSHEET_ID)
 
         # Scrivi foglio "Spese"
-        ws_spese = sh.worksheet("Spese")
+        ws_spese = sh.worksheet("SPESE")
         ws_spese.clear()
         ws_spese.append_row(["Carta", "Descrizione", "Importo", "Data"])
         for voce in spese:
@@ -64,17 +64,6 @@ def sync():
                 voce.get("descrizione", ""),
                 voce.get("importo", ""),
                 voce.get("data", "")
-            ])
-
-        # Scrivi foglio "Da Pagare"
-        ws_pagare = sh.worksheet("Da Pagare")
-        ws_pagare.clear()
-        ws_pagare.append_row(["Descrizione", "Importo", "Scadenza"])
-        for voce in da_pagare:
-            ws_pagare.append_row([
-                voce.get("descrizione", ""),
-                voce.get("importo", ""),
-                voce.get("scadenza", "")
             ])
 
         return jsonify({"status": "ok"})
