@@ -1,0 +1,87 @@
+import os
+import json
+import base64
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+app = Flask(__name__)
+CORS(app)
+
+# Password per autenticazione semplice
+USER_PASSWORD = os.environ.get("USER_PASSWORD")
+
+# ID del Google Sheets (modifica con il tuo!)
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
+
+# Funzione per ottenere il client gspread
+def get_gspread_client():
+    base64_creds = os.environ.get("GOOGLE_CREDENTIALS")
+    if not base64_creds:
+        raise ValueError("GOOGLE_CREDENTIALS_BASE64 non trovata")
+
+    json_creds = base64.b64decode(base64_creds).decode("utf-8")
+    creds_dict = json.loads(json_creds)
+
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    return gspread.authorize(creds)
+
+# Endpoint di autenticazione
+@app.route("/auth", methods=["POST"])
+def auth():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token == USER_PASSWORD:
+        return jsonify({"status": "ok"})
+    return jsonify({"status": "unauthorized"}), 401
+
+# Endpoint di sincronizzazione
+@app.route("/sync", methods=["POST"])
+def sync():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token != USER_PASSWORD:
+        return jsonify({"status": "unauthorized"}), 401
+
+    dati = request.get_json()
+    spese = dati.get("spese", [])
+    da_pagare = dati.get("da_pagare", [])
+
+    try:
+        gc = get_gspread_client()
+        sh = gc.open_by_key(SPREADSHEET_ID)
+
+        # Scrivi foglio "Spese"
+        ws_spese = sh.worksheet("Spese")
+        ws_spese.clear()
+        ws_spese.append_row(["Carta", "Descrizione", "Importo", "Data"])
+        for voce in spese:
+            ws_spese.append_row([
+                voce.get("carta", ""),
+                voce.get("descrizione", ""),
+                voce.get("importo", ""),
+                voce.get("data", "")
+            ])
+
+        # Scrivi foglio "Da Pagare"
+        ws_pagare = sh.worksheet("Da Pagare")
+        ws_pagare.clear()
+        ws_pagare.append_row(["Descrizione", "Importo", "Scadenza"])
+        for voce in da_pagare:
+            ws_pagare.append_row([
+                voce.get("descrizione", ""),
+                voce.get("importo", ""),
+                voce.get("scadenza", "")
+            ])
+
+        return jsonify({"status": "ok"})
+
+    except Exception as e:
+        print("Errore durante la sincronizzazione:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
