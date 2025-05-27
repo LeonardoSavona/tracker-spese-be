@@ -5,6 +5,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from dotenv import load_dotenv
+
+# Carica le variabili da .env se non sono già nel sistema
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -12,14 +16,14 @@ CORS(app)
 # Password per autenticazione semplice
 USER_PASSWORD = os.environ.get("USER_PASSWORD")
 
-# ID del Google Sheets (modifica con il tuo!)
+# ID del Google Sheets
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
 
 # Funzione per ottenere il client gspread
 def get_gspread_client():
     base64_creds = os.environ.get("GOOGLE_CREDENTIALS")
     if not base64_creds:
-        raise ValueError("GOOGLE_CREDENTIALS_BASE64 non trovata")
+        raise ValueError("Variabile GOOGLE_CREDENTIALS non trovata")
 
     json_creds = base64.b64decode(base64_creds).decode("utf-8")
     creds_dict = json.loads(json_creds)
@@ -54,7 +58,7 @@ def sync():
         gc = get_gspread_client()
         sh = gc.open_by_key(SPREADSHEET_ID)
 
-        # Scrivi foglio "Spese"
+        # Scrivi foglio "SPESE"
         ws_spese = sh.worksheet("SPESE")
         ws_spese.clear()
         ws_spese.append_row(["Carta", "Descrizione", "Importo", "Data"])
