@@ -52,7 +52,6 @@ def sync():
 
     dati = request.get_json()
     spese = dati.get("spese", [])
-    da_pagare = dati.get("da_pagare", [])
 
     try:
         gc = get_gspread_client()
@@ -72,6 +71,9 @@ def sync():
 
         return jsonify({"status": "ok"})
 
+    except gspread.exceptions.WorksheetNotFound as ex:
+        print("Foglio 'SPESE' non trovato:", ex)
+        return jsonify({"status": "error", "message": "Foglio 'SPESE' non trovato:" + str(ex)}), 500
     except Exception as e:
         print("Errore durante la sincronizzazione:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
