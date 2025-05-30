@@ -4,6 +4,7 @@ from flask_cors import CORS
 from functools import wraps
 from dotenv import load_dotenv
 from google_manager import update_spese
+from settings import get_settings, saveSettings
 
 load_dotenv()
 
@@ -46,5 +47,24 @@ def sync():
         print("Errore durante la sincronizzazione:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route("/settings", methods=["GET"])
+@require_auth
+def settings():
+    try:
+        settings_data = get_settings()
+        return jsonify(settings_data), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+@app.route("/saveSettings", methods=["POST"])
+@require_auth
+def saveSettings():
+    try:
+        settings = request.get_json()
+        saveSettings(settings)
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 if __name__ == "__main__":
     app.run(debug=True)

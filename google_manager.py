@@ -10,11 +10,11 @@ from gspread_formatting import CellFormat, format_cell_range, NumberFormat
 load_dotenv()
 
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
-
-INTERVALLI_CARTA = {
-    "Banco BPM": {"range": "13:27"},
-    "Revolut": {"range": "45:119"}
-}
+SHEET_NAME = os.environ.get("SHEET_NAME", "SPESE")
+INTERVALLI_CARTA = os.environ.get("INTERVALLI_CARTA", {
+    "Banco BPM": "13:27",
+    "Revolut": "45:119"
+})
 
 gspread_client = None
 
@@ -39,7 +39,7 @@ def get_gspread_client():
 def update_spese(spese):
     gc = get_gspread_client()
     sh = gc.open_by_key(SPREADSHEET_ID)
-    ws = sh.worksheet("SPESE")
+    ws = sh.worksheet(SHEET_NAME)
 
     for voce in spese:
         inserisci_voce_spesa(ws,
@@ -54,7 +54,7 @@ def inserisci_voce_spesa(ws, carta, descrizione, importo, data_str):
         raise ValueError("Carta non riconosciuta")
 
     col_descr, col_importo, col_data = range_colonne(data_str)
-    range_str = INTERVALLI_CARTA[carta]["range"]
+    range_str = INTERVALLI_CARTA[carta]
     start_row = int(range_str.split(":")[0])
     end_row = int(range_str.split(":")[1])
 
