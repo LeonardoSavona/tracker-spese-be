@@ -7,5 +7,6 @@ google-auth
 google-auth-httplib2
 google-auth-oauthlib
 gspread
+gspread-formatting
 oauth2client
 python-dotenv
